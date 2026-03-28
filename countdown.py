@@ -1,22 +1,34 @@
 #!/usr/bin/env python3
-"""Countdown timer with progress bar and sound."""
-import sys, time, re
-def parse_duration(s):
-    m = re.match(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$", s)
-    if m: return int(m[1] or 0)*3600 + int(m[2] or 0)*60 + int(m[3] or 0)
-    return int(s)
-def cli():
-    if len(sys.argv) < 2: print("Usage: countdown <duration> [label]"); print("  e.g. 5m, 1h30m, 90s, 300"); sys.exit(1)
-    total = parse_duration(sys.argv[1]); label = " ".join(sys.argv[2:]) or "Timer"
-    start = time.time()
-    try:
-        while True:
-            elapsed = time.time() - start; remaining = max(0, total - elapsed)
-            pct = min(1, elapsed / total); bar = "█" * int(pct*30) + "░" * (30-int(pct*30))
-            m, s = divmod(int(remaining), 60); h, m = divmod(m, 60)
-            ts = f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
-            print(f"\r  {label} [{bar}] {ts} remaining  ", end="", flush=True)
-            if remaining <= 0: print("\n  ⏰ Done!"); break
-            time.sleep(0.5)
-    except KeyboardInterrupt: print("\n  Cancelled")
-if __name__ == "__main__": cli()
+"""countdown - CLI countdown timer with large display."""
+import sys, time, os
+DIGITS={
+"0":["███","█ █","█ █","█ █","███"],"1":["  █","  █","  █","  █","  █"],
+"2":["███","  █","███","█  ","███"],"3":["███","  █","███","  █","███"],
+"4":["█ █","█ █","███","  █","  █"],"5":["███","█  ","███","  █","███"],
+"6":["███","█  ","███","█ █","███"],"7":["███","  █","  █","  █","  █"],
+"8":["███","█ █","███","█ █","███"],"9":["███","█ █","███","  █","███"],
+":":["   "," █ ","   "," █ ","   "]
+}
+def big_time(seconds):
+    m,s=divmod(seconds,60); h,m=divmod(m,60)
+    text=f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
+    for row in range(5):
+        print("  ".join(DIGITS.get(c,DIGITS["0"])[row] for c in text))
+def countdown(seconds):
+    while seconds>=0:
+        os.system("clear" if os.name!="nt" else "cls")
+        big_time(seconds)
+        if seconds==0: print("\n⏰ TIME'S UP!"); break
+        time.sleep(1); seconds-=1
+def parse_time(s):
+    parts=s.split(":")
+    if len(parts)==3: return int(parts[0])*3600+int(parts[1])*60+int(parts[2])
+    if len(parts)==2: return int(parts[0])*60+int(parts[1])
+    v=s.lower()
+    if v.endswith("h"): return int(v[:-1])*3600
+    if v.endswith("m"): return int(v[:-1])*60
+    if v.endswith("s"): return int(v[:-1])
+    return int(v)
+if __name__=="__main__":
+    if len(sys.argv)<2: print("Usage: countdown <time> (e.g., 5m, 1:30, 90s)"); sys.exit(1)
+    countdown(parse_time(sys.argv[1]))
