@@ -1,8 +1,13 @@
-# countdown-timer
-Terminal countdown timer with progress bar. Zero dependencies.
+# countdown
+
+Countdown timer with progress bar
+
 ## Usage
+
 ```bash
-python3 countdown.py 5m
-python3 countdown.py 1h30m
-python3 countdown.py 90
+python3 countdown.py --help
 ```
+
+## License
+
+MIT
