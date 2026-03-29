@@ -1,34 +1,25 @@
 #!/usr/bin/env python3
-"""countdown - CLI countdown timer with large display."""
-import sys, time, os
-DIGITS={
-"0":["███","█ █","█ █","█ █","███"],"1":["  █","  █","  █","  █","  █"],
-"2":["███","  █","███","█  ","███"],"3":["███","  █","███","  █","███"],
-"4":["█ █","█ █","███","  █","  █"],"5":["███","█  ","███","  █","███"],
-"6":["███","█  ","███","█ █","███"],"7":["███","  █","  █","  █","  █"],
-"8":["███","█ █","███","█ █","███"],"9":["███","█ █","███","  █","███"],
-":":["   "," █ ","   "," █ ","   "]
-}
-def big_time(seconds):
-    m,s=divmod(seconds,60); h,m=divmod(m,60)
-    text=f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
-    for row in range(5):
-        print("  ".join(DIGITS.get(c,DIGITS["0"])[row] for c in text))
-def countdown(seconds):
-    while seconds>=0:
-        os.system("clear" if os.name!="nt" else "cls")
-        big_time(seconds)
-        if seconds==0: print("\n⏰ TIME'S UP!"); break
-        time.sleep(1); seconds-=1
+"""countdown - Countdown timer."""
+import sys,argparse,json,time,re
 def parse_time(s):
-    parts=s.split(":")
-    if len(parts)==3: return int(parts[0])*3600+int(parts[1])*60+int(parts[2])
-    if len(parts)==2: return int(parts[0])*60+int(parts[1])
-    v=s.lower()
-    if v.endswith("h"): return int(v[:-1])*3600
-    if v.endswith("m"): return int(v[:-1])*60
-    if v.endswith("s"): return int(v[:-1])
-    return int(v)
-if __name__=="__main__":
-    if len(sys.argv)<2: print("Usage: countdown <time> (e.g., 5m, 1:30, 90s)"); sys.exit(1)
-    countdown(parse_time(sys.argv[1]))
+    total=0
+    for m in re.finditer(r"(\d+)(h|m|s)",s):
+        n=int(m.group(1));u=m.group(2)
+        total+=n*{"h":3600,"m":60,"s":1}[u]
+    if not total:total=int(s)
+    return total
+def main():
+    p=argparse.ArgumentParser(description="Countdown timer")
+    p.add_argument("duration",help="Duration (e.g. 5m30s, 300)")
+    p.add_argument("--json",action="store_true")
+    args=p.parse_args()
+    secs=parse_time(args.duration)
+    if args.json:print(json.dumps({"duration_seconds":secs,"formatted":f"{secs//3600}h{(secs%3600)//60}m{secs%60}s"}));return
+    start=time.time()
+    while True:
+        elapsed=time.time()-start;remaining=max(0,secs-elapsed)
+        m,s=divmod(int(remaining),60);h,m=divmod(m,60)
+        print(f"\r{h:02d}:{m:02d}:{s:02d}",end="",flush=True)
+        if remaining<=0:print("\nDone!");break
+        time.sleep(0.1)
+if __name__=="__main__":main()
